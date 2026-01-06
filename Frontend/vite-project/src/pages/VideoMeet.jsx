@@ -11,9 +11,9 @@ import MicOffIcon from '@mui/icons-material/MicOff'
 import ScreenShareIcon from '@mui/icons-material/ScreenShare';
 import StopScreenShareIcon from '@mui/icons-material/StopScreenShare'
 import ChatIcon from '@mui/icons-material/Chat'
+import server from '../environment';
 
-
-
+const server_url = server;
 
 var connections = {};
 
@@ -67,8 +67,7 @@ export default function VideoMeetComponent() {
     useEffect(() => {
         console.log("HELLO")
         getPermissions();
-
-    })
+    },[])
 
     let getDislayMedia = () => {
         if (screen) {
@@ -383,9 +382,39 @@ export default function VideoMeetComponent() {
     }
 
     let handleVideo = () => {
-        setVideo(!video);
-        // getUserMedia();
+    if (video === true) {
+        // VIDEO OFF → BLACK SCREEN
+        try {
+            window.localStream.getTracks().forEach(track => track.stop());
+        } catch (e) {}
+
+        let blackSilence = (...args) => new MediaStream([black(...args), silence()]);
+        window.localStream = blackSilence();
+        localVideoref.current.srcObject = window.localStream;
+
+        for (let id in connections) {
+            connections[id].addStream(window.localStream);
+            connections[id].createOffer().then((description) => {
+                connections[id].setLocalDescription(description)
+                    .then(() => {
+                        socketRef.current.emit(
+                            'signal',
+                            id,
+                            JSON.stringify({ sdp: connections[id].localDescription })
+                        );
+                    });
+            });
+        }
+
+        setVideo(false);
+
+    } else {
+        // VIDEO ON → REAL CAMERA
+        setVideo(true);
+        getUserMedia();
     }
+};
+
     let handleAudio = () => {
         setAudio(!audio)
         // getUserMedia();
@@ -405,7 +434,7 @@ export default function VideoMeetComponent() {
             let tracks = localVideoref.current.srcObject.getTracks()
             tracks.forEach(track => track.stop())
         } catch (e) { }
-        window.location.href = "/"
+        window.location.href = "/home"
     }
 
     let openChat = () => {
