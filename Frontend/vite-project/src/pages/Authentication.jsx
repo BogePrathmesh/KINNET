@@ -8,200 +8,168 @@ import Checkbox from '@mui/material/Checkbox';
 import Link from '@mui/material/Link';
 import Paper from '@mui/material/Paper';
 import Box from '@mui/material/Box';
+import Grid from '@mui/material/Grid';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Typography from '@mui/material/Typography';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { AuthContext } from '../contexts/Authcontext';
-import Snackbar from '@mui/material/Snackbar';
+import { AuthContext } from '../contexts/AuthContext';
+import { Snackbar } from '@mui/material';
 
-/* ------------------ Footer ------------------ */
-function Copyright(props) {
-    return (
-        <Typography
-            variant="body2"
-            color="text.secondary"
-            align="center"
-            sx={{ mt: 5 }}
-            {...props}
-        >
-            {'Copyright © '}
-            <Link color="inherit">
-                KINNECT
-            </Link>{' '}
-            {new Date().getFullYear()}
-        </Typography>
-    );
-}
 
-const theme = createTheme();
+
+// TODO remove, this demo shouldn't need to reset the theme.
+
+const defaultTheme = createTheme();
 
 export default function Authentication() {
+
+    
 
     const [username, setUsername] = React.useState("");
     const [password, setPassword] = React.useState("");
     const [name, setName] = React.useState("");
-    const [error, seterror] = React.useState("");
+    const [error, setError] = React.useState("");
     const [message, setMessage] = React.useState("");
 
-    const [formstate, setFormState] = React.useState(0);
 
-    const [open, setOpen] = React.useState(false);
+    const [formState, setFormState] = React.useState(0);
+
+    const [open, setOpen] = React.useState(false)
+
 
     const { handleRegister, handleLogin } = React.useContext(AuthContext);
+
     let handleAuth = async () => {
         try {
-            if (formstate === 0) {
-                let result = await handleLogin(username, password);
-                setMessage(result);
-                setOpen(true);
+            if (formState === 0) {
+
+                let result = await handleLogin(username, password)
+
+
             }
-            if (formstate === 1) {
+            if (formState === 1) {
                 let result = await handleRegister(name, username, password);
                 console.log(result);
                 setUsername("");
                 setMessage(result);
                 setOpen(true);
-                seterror("");
-                setFormState(0);
-                setPassword("");
+                setError("")
+                setFormState(0)
+                setPassword("")
             }
         } catch (err) {
-            seterror(err.message);
+
+            console.log(err);
+            let message = (err.response.data.message);
+            setError(message);
         }
     }
 
 
     return (
-        <ThemeProvider theme={theme}>
-            <CssBaseline />
-
-            {/* MAIN WRAPPER */}
-            <Box
-                sx={{
-                    display: 'flex',
-                    minHeight: '100vh',
-                    width: '100%',
-                }}
-            >
-                {/* IMAGE SECTION */}
-                <Box
+        <ThemeProvider theme={defaultTheme}>
+            <Grid container component="main" sx={{ height: '100vh' }}>
+                <CssBaseline />
+                <Grid
+                    item
+                    xs={false}
+                    sm={4}
+                    md={7}
                     sx={{
-                        flex: 1,
-                        display: { xs: 'none', md: 'block' },
-                        backgroundImage:
-                            'url(https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1600&q=80)',
+                        backgroundImage: 'url(https://source.unsplash.com/random?wallpapers)',
                         backgroundRepeat: 'no-repeat',
+                        backgroundColor: (t) =>
+                            t.palette.mode === 'light' ? t.palette.grey[50] : t.palette.grey[900],
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                     }}
                 />
-
-                {/* FORM SECTION */}
-                <Paper
-                    elevation={6}
-                    square
-                    sx={{
-                        flex: 1,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                    }}
-                >
+                <Grid item xs={12} sm={8} md={5} component={Paper} elevation={6} square>
                     <Box
                         sx={{
-                            width: '100%',
-                            maxWidth: 400,
-                            px: 4,
+                            my: 8,
+                            mx: 4,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
                         }}
                     >
-                        <Box
-                            sx={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                            }}
-                        >
-                            <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
-                                <LockOutlinedIcon />
-                            </Avatar>
-
-                            <div>
-                                <Button variant={formstate === 0 ? "contained" : ""} onClick={() => { setFormState(0) }}>
-                                    Sign IN
-                                </Button>
-                                <Button variant={formstate === 1 ? "contained" : ""} onClick={() => { setFormState(1) }}>
-                                    Sign Up
-                                </Button>
-                            </div>
+                        <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
+                            <LockOutlinedIcon />
+                        </Avatar>
 
 
-                            <Box component="form" sx={{ mt: 3 }}>
+                        <div>
+                            <Button variant={formState === 0 ? "contained" : ""} onClick={() => { setFormState(0) }}>
+                                Sign In
+                            </Button>
+                            <Button variant={formState === 1 ? "contained" : ""} onClick={() => { setFormState(1) }}>
+                                Sign Up
+                            </Button>
+                        </div>
 
-                                {formstate === 1 ? <TextField
-                                    required
-                                    fullWidth
-                                    label="Fullname"
-                                    name="Fullname"
-                                    autoFocus
-                                    margin="normal"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                /> : <></>}
+                        <Box component="form" noValidate sx={{ mt: 1 }}>
+                            {formState === 1 ? <TextField
+                                margin="normal"
+                                required
+                                fullWidth
+                                id="username"
+                                label="Full Name"
+                                name="username"
+                                value={name}
+                                autoFocus
+                                onChange={(e) => setName(e.target.value)}
+                            /> : <></>}
 
-                                <TextField
-                                    required
-                                    fullWidth
-                                    label="Username"
-                                    name="Username"
-                                    value={username}
-                                    autoFocus
-                                    margin="normal"
-                                    onChange={(e) => setUsername(e.target.value)}
-                                />
+                            <TextField
+                                margin="normal"
+                                required
+                                fullWidth
+                                id="username"
+                                label="Username"
+                                name="username"
+                                value={username}
+                                autoFocus
+                                onChange={(e) => setUsername(e.target.value)}
 
-                                <TextField
-                                    required
-                                    fullWidth
-                                    name="password"
-                                    label="Password"
-                                    type="password"
-                                    value={password}
-                                    margin="normal"
-                                    onChange={(e) => setPassword(e.target.value)}
-                                />
+                            />
+                            <TextField
+                                margin="normal"
+                                required
+                                fullWidth
+                                name="password"
+                                label="Password"
+                                value={password}
+                                type="password"
+                                onChange={(e) => setPassword(e.target.value)}
 
-                                <FormControlLabel
-                                    control={<Checkbox color="primary" />}
-                                    label="Remember me"
-                                    sx={{ mt: 1 }}
-                                />
+                                id="password"
+                            />
 
-                                <p style={{ color: "red" }}>{error}</p>
-                                <Button
-                                    type="button"
-                                    fullWidth
-                                    variant="contained"
-                                    sx={{ mt: 3, mb: 2 }}
-                                    onClick={handleAuth}
-                                >
-                                    {formstate === 0 ? "Login" : "Register"}
-                                </Button>
+                            <p style={{ color: "red" }}>{error}</p>
 
-                                {/* LINKS WITH CLEAN SPACING */}
+                            <Button
+                                type="button"
+                                fullWidth
+                                variant="contained"
+                                sx={{ mt: 3, mb: 2 }}
+                                onClick={handleAuth}
+                            >
+                                {formState === 0 ? "Login " : "Register"}
+                            </Button>
 
-
-                                <Copyright />
-                            </Box>
                         </Box>
                     </Box>
-                </Paper>
-            </Box>
+                </Grid>
+            </Grid>
 
             <Snackbar
+
                 open={open}
                 autoHideDuration={4000}
                 message={message}
             />
+
         </ThemeProvider>
     );
 }

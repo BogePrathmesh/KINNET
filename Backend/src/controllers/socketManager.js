@@ -1,105 +1,119 @@
-import { Server } from "socket.io";
+import { Server } from "socket.io"
+
 
 let connections = {}
 let messages = {}
 let timeOnline = {}
 
-export const connectTOSocket = (server) => {
-    const io = new Server(server,{
-        cors:{
-            origin:"*",
-            methods:["GET","POST"],
-            allowedHeaders:["*"],
-            credentials:true,
+export const connectToSocket = (server) => {
+    const io = new Server(server, {
+        cors: {
+            origin: "*",
+            methods: ["GET", "POST"],
+            allowedHeaders: ["*"],
+            credentials: true
         }
     });
 
-    //this for showing if any user connect to socket it will call this
+
     io.on("connection", (socket) => {
 
-        console.log("Something is connected");
+        console.log("SOMETHING CONNECTED")
 
         socket.on("join-call", (path) => {
 
             if (connections[path] === undefined) {
-                connections[path] = [];
+                connections[path] = []
             }
+            connections[path].push(socket.id)
 
-            connections[path].push(socket.id); //this for adding the connections id in connectios object
             timeOnline[socket.id] = new Date();
 
+            // connections[path].forEach(elem => {
+            //     io.to(elem)
+            // })
+
             for (let a = 0; a < connections[path].length; a++) {
-                io.to(connections[path][a]).emit("user-joined", socket.id, connections[path]);
+                io.to(connections[path][a]).emit("user-joined", socket.id, connections[path])
             }
 
             if (messages[path] !== undefined) {
-
-                for (let a = 0; a < messages[path].length; a++) {
-                    io.to(socket.id).emit("chat-message", messages[path][a]['data'], messages[path][a]['sender'], messages[path][a]['socket-id-sender']);
+                for (let a = 0; a < messages[path].length; ++a) {
+                    io.to(socket.id).emit("chat-message", messages[path][a]['data'],
+                        messages[path][a]['sender'], messages[path][a]['socket-id-sender'])
                 }
             }
-        });
 
-        socket.on("signal", (toId, messages) => {
-            io.to(toId).emit("signal", socket.id, messages);
+        })
+
+        socket.on("signal", (toId, message) => {
+            io.to(toId).emit("signal", socket.id, message);
         })
 
         socket.on("chat-message", (data, sender) => {
 
-            //following is code is about founding the room and sending message in it only
-            const [mathingroom, found] = Object.entries(connections)
-                .reduce(([room, isfound], [roomkey, roomvalue]) => {
+            const [matchingRoom, found] = Object.entries(connections)
+                .reduce(([room, isFound], [roomKey, roomValue]) => {
 
-                    if (!isfound && roomvalue.includes(socket.id)) {
-                        return [roomkey, true];
+
+                    if (!isFound && roomValue.includes(socket.id)) {
+                        return [roomKey, true];
                     }
 
-                    return [room, isfound];
+                    return [room, isFound];
+
                 }, ['', false]);
 
-
-            if (found == true) {
-                if (messages[mathingroom] === undefined) {
-                    messages[mathingroom] = []
+            if (found === true) {
+                if (messages[matchingRoom] === undefined) {
+                    messages[matchingRoom] = []
                 }
 
-                messages[mathingroom].push({ 'sender': sender, 'data': data, 'socket-id-sender': sender.id });
-                console.log("message",mathingroom, ":", sender, data);
+                messages[matchingRoom].push({ 'sender': sender, "data": data, "socket-id-sender": socket.id })
+                console.log("message", matchingRoom, ":", sender, data)
 
-                connections[mathingroom].forEach((element) => {
-                    io.to(element).emit("chat-message", data, sender, socket.id);
-                });
+                connections[matchingRoom].forEach((elem) => {
+                    io.to(elem).emit("chat-message", data, sender, socket.id)
+                })
             }
+
         })
 
-        socket.on("disconnet", () => {
-            var difftime = Math.abs(timeOnline[socket.id] - new Date());
+        socket.on("disconnect", () => {
+
+            var diffTime = Math.abs(timeOnline[socket.id] - new Date())
 
             var key
 
-            //this is for creating the deep copy for something we want to delete
-            for(const[k,v] of JSON.parse(JSON.stringify(Object.entries(connections)))){
-                for(let a = 0 ;a<v.length;a++)
-                {
-                    if(v[a]===socket.id)
-                    {
-                        key = k;
+            for (const [k, v] of JSON.parse(JSON.stringify(Object.entries(connections)))) {
 
-                        for(let a = 0;a<connections[key].length;a++)
-                        {
-                            io.to(connections[key][a]).emit('user-left' , socket.id);
+                for (let a = 0; a < v.length; ++a) {
+                    if (v[a] === socket.id) {
+                        key = k
+
+                        for (let a = 0; a < connections[key].length; ++a) {
+                            io.to(connections[key][a]).emit('user-left', socket.id)
                         }
 
-                        var index = connections[key].indexof(socket.id);
+                        var index = connections[key].indexOf(socket.id)
 
-                        connections[key].splice(index,1);
+                        connections[key].splice(index, 1)
 
-                        if(connections[key].length===0){
-                            delete connections[key];
+
+                        if (connections[key].length === 0) {
+                            delete connections[key]
                         }
                     }
                 }
+
             }
+
+
         })
-    });
+
+
+    })
+
+
+    return io;
 }
